@@ -1,27 +1,44 @@
 #include <iostream>
-#include <stdio.h>
+#include <string>
 #include <sqlite3.h>
+
+
 using namespace std;
 
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
-    for (i=0; i<argc; i++){
-        cout << "&s = &s\n" << azColName[i] << argv[i] << argv[i] << "NULL" <<endl;
-        // printf("&s = &s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+// Create a callback function  
+int callback(void *NotUsed, int argc, char **argv, char **azColName){
+
+    // int argc: holds the number of results
+    // (array) azColName: holds each column returned
+    // (array) argv: holds each value
+
+    for(int i = 0; i < argc; i++) {
+        
+        // Show column name, value, and newline
+        cout << azColName[i] << ": " << argv[i] << endl;
+    
     }
-    cout << "\n" << endl;
-    // printf("\n");
+
+    // Insert a newline
+    cout << endl;
+
+    // Return successful
     return 0;
 }
 
-int main(int argc, char* argv[]) {
+int main() {
    sqlite3 *db;
+
    char *zErrMsg = 0;
+   
    int rc;
-   const char *sql;
-   char username;
-   char password;
+   
+   string sql;
+   
+   string username;
+   
+   string password;
 
    cout << "Type in your username: " <<endl;
    cin >> username;
@@ -31,35 +48,30 @@ int main(int argc, char* argv[]) {
 
    /* Open the database */
 
-   rc = sqlite3_open("test.db", &db);
+   rc = sqlite3_open("banking.db", &db);
 
    if( rc ) {
-       cerr << "Can't open database: %s\n" << sqlite3_errmsg(db);
+       cout<< "SQL error: " <<sqlite3_errmsg(db) << endl;
+
+       sqlite3_close(db);
+    //    cerr << "Can't open database: %s\n" << sqlite3_errmsg(db);
     //   fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-      return(0);
-   } else {
-       cout << "Opened database successfully\n" << endl;
-    //   fprintf(stdout, "Opened database successfully\n");
+      return(1);
    }
+
+   sql = "CREATE TABLE LOGIN ("  \
+      "USERNAME STRING PRIMARY KEY     NOT NULL," \
+      "PASSWORD STRING                 NOT NULL);";
+
+   rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
    
-   /* Create SQL statement */
+   sql =  "INSERT INTO LOGIN ('USERNAME', 'PASSWORD') VALUES ('"+username+"', '"+password+"');";
 
-   sql = "INSERT INTO LOGIN ('USERNAME', 'PASSWORD') VALUES ('?','?');";
+    rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
-   /* Execute SQL statement */
+    sqlite3_close(db);
 
-   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+    return 0;
 
-   if(rc!= SQLITE_OK){
-       cerr << "SQL error" << &zErrMsg <<endl;
-    //    void fprintf(stderr, "SQL error: &s\n", zErrMsg);
-       sqlite3_free(zErrMsg);
-   }else{
-       cout<< "Table created successfully\n" << endl;
-    //    void fprintf(stdout, 'Table created successfully\n');
-   }
-   sqlite3_close(db);
-   return 0;
-   
 }
 
