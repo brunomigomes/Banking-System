@@ -5,6 +5,10 @@
 using namespace std;
 
 bool auth;
+string username;
+string password;
+string repeat;
+bool ret;
 
 // Create a callback function
 int callback(void *NotUsed, int argc, char **argv, char **azColName)
@@ -24,8 +28,9 @@ int callback(void *NotUsed, int argc, char **argv, char **azColName)
         //     bool auth = false;
         //     return auth;
         // }
-
-        // cout << azColName[i] << ": " << argv[i] << endl;
+        if (ret == true){
+        cout << azColName[i] << ": " << argv[i] << "$" << endl;
+        }
         if (argv[i]){
             auth = true;
         } else{
@@ -42,8 +47,66 @@ int callback(void *NotUsed, int argc, char **argv, char **azColName)
     return 0;
 }
 
+int balance(){
+    sqlite3 *db;
+
+    char *zErrMsg = 0;
+
+    int rc;
+
+    string sql;
+
+    rc = sqlite3_open("banking.db", &db);
+
+    if (rc)
+    {
+        cout << "SQL error: " << sqlite3_errmsg(db) << endl;
+
+        sqlite3_close(db);
+        //    cerr << "Can't open database: %s\n" << sqlite3_errmsg(db);
+        //   fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        return (1);
+    }
+
+    sql = "CREATE TABLE LOGIN ("
+          "USERNAME STRING PRIMARY KEY     NOT NULL,"
+          "PASSWORD STRING                 NOT NULL,"
+          "BALANCE  DECIMAL                NOT NULL);";
+
+    rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
+
+    sql = "SELECT BALANCE FROM LOGIN WHERE USERNAME = '"+username+"';";
+
+    rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
+
+    sqlite3_close(db);
+
+    return 0;
+}
 int opcenter(){
+    
+    string selector;
+
     cout << "Welcome to the main page of your account!" << endl;
+    cout << "Select what do you want to do: \n"
+    "B - Balance; \n"
+    "D - Deposit; \n"
+    "W - Withdraw; \n" << endl;
+
+    cin >> selector;
+
+    if (selector == "B" || selector == "b"){
+        balance(); //Calls "balance function"
+    }
+
+//     if (selector == "D" || selector == "d"){
+//         deposit();
+//     }
+
+//     if (selector == "W" || selector == "w"){
+//         withdraw();
+//     }
+
     return 0;
 }
 
@@ -64,6 +127,8 @@ int newuser()
 
     string operation;
 
+    string cont;
+
     cout << "Type in your username: " << endl;
     cin >> username;
 
@@ -86,15 +151,28 @@ int newuser()
 
     sql = "CREATE TABLE LOGIN ("
           "USERNAME STRING PRIMARY KEY     NOT NULL,"
-          "PASSWORD STRING                 NOT NULL);";
+          "PASSWORD STRING                 NOT NULL,"
+          "BALANCE  DECIMAL                NOT NULL);";
 
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
-    sql = "INSERT INTO LOGIN ('USERNAME', 'PASSWORD') VALUES ('" + username + "', '" + password + "');";
+    sql = "INSERT INTO LOGIN ('USERNAME', 'PASSWORD', 'BALANCE') VALUES ('" + username + "', '" + password + "', 0);";
 
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
+
+    // cout << "Do you want to login now? (Y/N)" << endl;
+    // cin >> cont;
+
+    // if (cont == "Y" || cont == "y"){
+    //     int login();
+    // }
+    // if (cont == "N" || cont == "n"){
+    //     exit(0);
+    // }
 
     sqlite3_close(db);
+
+
     
     return 0;
 }
@@ -110,15 +188,12 @@ int login()
 
     string sql;
 
-    string username;
-    string password;
-    string repeat;
-
     cout << "Type in your username: " << endl;
     cin >> username;
 
     cout << "Type in your password: " << endl;
     cin >> password;
+
 
     /* Open the database */
 
@@ -136,7 +211,8 @@ int login()
 
     sql = "CREATE TABLE LOGIN ("
           "USERNAME STRING PRIMARY KEY     NOT NULL,"
-          "PASSWORD STRING                 NOT NULL);";
+          "PASSWORD STRING                 NOT NULL,"
+          "BALANCE  FLOAT                   NOT NULL,);";
 
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
@@ -156,6 +232,7 @@ int login()
         cout << "Operation Ok" << endl; 
 
     }if (auth == true){
+        ret = true;
         opcenter();
     }else{
         cout << "Account does not exist! Do you want to try again or register? \n"
