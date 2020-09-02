@@ -4,10 +4,11 @@
 
 using namespace std;
 
+bool auth;
+
 // Create a callback function
 int callback(void *NotUsed, int argc, char **argv, char **azColName)
 {
-
     // int argc: holds the number of results
     // (array) azColName: holds each column returned
     // (array) argv: holds each value
@@ -16,8 +17,23 @@ int callback(void *NotUsed, int argc, char **argv, char **azColName)
     {
 
         // Show column name, value, and newline
-        cout << azColName[i] << ": " << argv[i] << endl;
+        // if (argv[i] == '1'){
+        //     bool auth = true;
+        //     return auth;
+        // }else{
+        //     bool auth = false;
+        //     return auth;
+        // }
+
+        // cout << azColName[i] << ": " << argv[i] << endl;
+        if (argv[i]){
+            auth = true;
+        } else{
+            auth = false;
+        }
+        return auth;
     }
+
 
     // Insert a newline
     cout << endl;
@@ -79,7 +95,7 @@ int newuser()
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
     sqlite3_close(db);
-
+    
     return 0;
 }
 
@@ -96,6 +112,7 @@ int login()
 
     string username;
     string password;
+    string repeat;
 
     cout << "Type in your username: " << endl;
     cin >> username;
@@ -124,26 +141,41 @@ int login()
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
 
-    sql= "SELECT * FROM LOGIN WHERE USERNAME = '"+username+"' AND PASSWORD = '"+password+"'";
+    sql= "SELECT 1 FROM LOGIN WHERE USERNAME = '"+username+"' AND PASSWORD = '"+password+"'";
 
-    
+
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
 
-    
-    if (rc != SQLITE_OK){
-        cout << "Invalid Account!" << endl;
-        cout << "SQL error: " << sqlite3_errmsg(db) << endl;
 
-        
-        //    cerr << "Can't open database: %s\n" << sqlite3_errmsg(db);
-        //   fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        return (0);   
+    // if (rc != SQLITE_OK){
+    //     cout << "SQL error: " << sqlite3_errmsg(db) << endl;
+    //     return (0);   
     
-    }if (rc == true) {
+    // }
+    if (rc == true) {
         cout << "Operation Ok" << endl; 
 
-    }else{
+    }if (auth == true){
         opcenter();
+    }else{
+        cout << "Account does not exist! Do you want to try again or register? \n"
+        "T - Try Again; \n"
+        "C - Close; \n"
+        "R - Register \n";
+        cin >> repeat;
+
+        if (repeat == "T" || repeat == "t"){
+            login();
+        }
+        
+        if (repeat == "C" || repeat == "c"){
+            exit(0);
+        }
+        
+        if (repeat == "R" ||  repeat == "r"){
+            newuser();
+        }
+
     }
     sqlite3_close(db);
     return 0;
